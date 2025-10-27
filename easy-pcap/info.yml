@@ -1,0 +1,11 @@
+display-name-on-ctfd: "The Vanishing Secret"
+uuid: "a407fb87-178c-48d6-9a14-90b78c1bb3e9" 
+flag: "MINUTEMAN{5u64r_5p1c3_4nd_3v3ry7h1n6_n1c3 }"
+description: "Oh no, someone moved our secret to another location. We will investigate why later, but first we need to find the new location. Can you find where that is? " 
+connection-info: "{{ HOST }}:{{ PORT }}"
+attribution: "tammy" 
+tags:
+  - wireshark 
+  - easy
+hints:
+  

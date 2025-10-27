@@ -1,0 +1,4 @@
+malicious_samples/*
+clean_samples/*
+!malicious_samples/.gitkeep
+!clean_samples/.gitkeep

@@ -1,0 +1,26 @@
+display-name-on-ctfd: "YARA Verficator" 
+uuid: "53d25d10-68bc-4433-b69f-959bc31b1479"
+flag: "MINUTEMAN{w3_ju57_l0v3_y37_4n07h3r_r1d1cul0u5_rul3_0300393325}"
+description: "
+FROM: Manager
+TO: SOC Team
+Subject: Urgent! Malware Remediation Required
+
+Team,
+
+Our IDS flagged multple hosts beaconing to an external IP. All infected Windows machines are using the same User-Agent string: Mozilla/5.0 like Gecko.
+
+I've dumped all executables from the affected systems. Write a YARA rule to find the malware so we can clean the rest of the network.
+
+- Manger
+
+"
+
+connection-info: "{{ HOST }}:{{ PORT }}"
+attribution: "tammy" 
+tags:
+  - yara
+  - medium
+hints:
+  - "https://learn.microsoft.com/en-us/windows/win32/wininet/wininet-functions"
+  - "Read the description carefully"

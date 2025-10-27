@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YARA Verificator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .spinner {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 2px solid white;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Editor with line numbers */
+        .editor {
+            display: flex;
+            gap: 8px;
+            position: relative;
+            align-items: stretch;
+        }
+        .line-numbers {
+            width: 56px;
+            padding: 16px 8px;
+            color: #94a3b8; /* slate-400 */
+            background: transparent;
+            text-align: right;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 20px;
+            user-select: none;
+            white-space: pre;
+            overflow: hidden;
+        }
+        .editor textarea {
+            flex: 1;
+            line-height: 20px;
+            padding: 16px;
+            min-height: 12rem;
+        }
+        /* Ensure placeholder text is visible on dark backgrounds */
+        .editor textarea::placeholder {
+            color: #94a3b8; /* slate-400 */
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <div class="bg-slate-800 rounded-lg shadow-2xl p-8 border border-purple-500">
+            <!-- Header -->
+            <div class="flex items-center gap-3 mb-6">
+                <svg class="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                </svg>
+                <h1 class="text-3xl font-bold text-white">YARA Verificator</h1>
+            </div>
+            <!-- Instructions -->
+            <div class="bg-slate-700 rounded p-4 mb-6">
+                <h2 class="text-lg font-semibold text-purple-300 mb-2">Challenge Instructions</h2>
+                <p class="text-gray-300 text-sm mb-2">
+                    Write a YARA rule that detects all malicious samples with 
+                    <span class="text-purple-400 font-semibold">0 false negatives</span> and 
+                    produces <span class="text-purple-400 font-semibold">0 false positives</span> against clean system files.
+
+                    The malware disguised itself as a legitimate browser by mimicking common web traffic patterns while periodically checking for commands from its remote server. Upon receiving instructions, it would spawn new processes to execute the attacker's payloads on the compromised system. The entire operation relied on Windows networking APIs to maintain a low profile and avoid detection by security tools.
+                </p>
+                <p class="text-gray-400 text-xs">
+                    You've been provided a ZIP file containing the malicious samples. The rule will be tested against those samples 
+                    and a clean dataset.
+                </p>
+            </div>
+
+            <!-- YARA Rule Input -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-purple-300 mb-2">
+                    Enter Your YARA Rule
+                </label>
+                <div class="editor bg-slate-900 text-gray-100 border border-slate-600 rounded-lg font-mono text-sm focus-within:ring-2 focus-within:ring-purple-500">
+                    <div id="line-numbers" class="line-numbers">1</div>
+                        <textarea
+                                id="yara-rule"
+                                class="w-full h-64 bg-transparent text-gray-100 rounded-lg p-0 font-mono text-sm focus:outline-none resize-none"
+                        ></textarea>
+                        <script>
+                        // Set placeholder on the actual textarea (id="yara-rule")
+                        const yaraEl = document.getElementById('yara-rule');
+                        if (yaraEl) {
+                            yaraEl.setAttribute('placeholder', `rule detect_malware {
+    strings:
+        $pattern0 = "string"
+        $pattern1 = "string"
+    condition:
+        any of them
+}`);
+                        }
+                        </script>
+
+                                    
+                    </div>
+                </div>
+
+            <!-- Submit Button -->
+            <button
+                id="submit-btn"
+                onclick="validateRule()"
+                class="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span id="submit-text">Submit & Validate</span>
+                <span id="submit-status" class="sr-only ml-2 text-sm text-gray-200"></span>
+            </button>
+
+            <!-- Result Area -->
+            <div id="result-container" class="mt-6 hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        // Load stats on page load
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                const mEl = document.getElementById('malicious-count');
+                const cEl = document.getElementById('clean-count');
+                if (mEl) mEl.textContent = data.malicious_count;
+                if (cEl) cEl.textContent = data.clean_count;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Validate YARA rule
+        async function validateRule() {
+            console.log('validateRule called');
+            const yaraRule = document.getElementById('yara-rule').value;
+            const submitBtn = document.getElementById('submit-btn');
+            const submitText = document.getElementById('submit-text');
+            const resultContainer = document.getElementById('result-container');
+
+            if (!yaraRule.trim()) {
+                showResult({
+                    success: false,
+                    message: 'Please enter a YARA rule',
+                    type: 'error'
+                });
+                return;
+            }
+
+            // Show loading state
+            submitBtn.disabled = true;
+            submitText.innerHTML = '<div class="spinner"></div> Validating Rule...';
+            const submitStatus = document.getElementById('submit-status');
+            if (submitStatus) {
+                submitStatus.classList.remove('sr-only');
+                submitStatus.textContent = 'Validating...';
+            }
+
+            // Use AbortController to avoid hanging requests
+            const controller = new AbortController();
+            const timeoutMs = 10000; // 10s
+            const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+            try {
+                console.log('posting rule to /api/validate...');
+                const response = await fetch('/api/validate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ rule: yaraRule }),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeout);
+
+                // Try to read response as text first (handles empty/non-JSON responses)
+                const text = await response.text();
+                console.log('response status', response.status, 'body:', text);
+
+                let data;
+                try {
+                    data = text ? JSON.parse(text) : null;
+                } catch (e) {
+                    data = null;
+                }
+
+                if (!data) {
+                    // If server didn't return JSON, show raw text or a helpful message
+                    showResult({
+                        success: false,
+                        message: text ? `Server response: ${text}` : `No response body. HTTP ${response.status}`,
+                        type: response.ok ? 'warning' : 'error'
+                    });
+                } else {
+                    showResult(data);
+                }
+
+            } catch (error) {
+                console.error('validateRule error:', error);
+                const msg = error.name === 'AbortError' ? 'Request timed out (no response from server).' : error.message;
+                showResult({
+                    success: false,
+                    message: 'Error communicating with server: ' + msg,
+                    type: 'error'
+                });
+            } finally {
+                // Reset button
+                // Avoid inserting another SVG here — the original icon is outside the span
+                submitBtn.disabled = false;
+                submitText.innerHTML = 'Submit & Validate';
+                if (submitStatus) {
+                    submitStatus.classList.add('sr-only');
+                    submitStatus.textContent = '';
+                }
+            }
+        }
+
+        // Display result
+        function showResult(result) {
+            const container = document.getElementById('result-container');
+            container.classList.remove('hidden');
+
+            let bgColor, borderColor, iconColor, icon;
+            
+            if (result.type === 'success') {
+                bgColor = 'bg-green-900';
+                borderColor = 'border-green-500';
+                iconColor = 'text-green-400';
+                icon = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>';
+            } else if (result.type === 'error') {
+                bgColor = 'bg-red-900';
+                borderColor = 'border-red-500';
+                iconColor = 'text-red-400';
+                icon = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>';
+            } else {
+                bgColor = 'bg-yellow-900';
+                borderColor = 'border-yellow-500';
+                iconColor = 'text-yellow-400';
+                icon = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>';
+            }
+
+            let html = `
+                <div class="${bgColor} ${borderColor} p-4 rounded-lg border">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-6 h-6 ${iconColor} flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            ${icon}
+                        </svg>
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-white mb-2">${result.message}</h3>
+            `;
+
+            // Add flag if successful
+            if (result.flag) {
+                html += `
+                    <div class="mt-4 p-3 bg-slate-800 rounded border border-purple-400">
+                        <p class="text-purple-300 text-sm mb-1">🎉 Flag:</p>
+                        <code class="text-green-400 font-mono text-lg">${result.flag}</code>
+                    </div>
+                `;
+            }
+
+            // Add details
+            if (result.details) {
+                html += '<div class="mt-3 text-sm">';
+                
+                if (result.type === 'success') {
+                    html += `
+                        <div class="text-green-300">
+                            <p>✓ Malicious samples detected: ${result.details.maliciousDetected}/${result.details.maliciousTotal}</p>
+                            <p>✓ Clean samples passed: ${result.details.cleanPassed}/${result.details.cleanTotal}</p>
+                        </div>
+                    `;
+                } else if (result.type === 'warning') {
+                    html += `
+                        <div class="text-yellow-300 space-y-2">
+                            <p class="font-semibold">Results:</p>
+                            <p>False Negatives: ${result.details.falseNegatives} (missed malicious samples)</p>
+                    `;
+                    
+                    if (result.details.fnSamples && result.details.fnSamples.length > 0) {
+                        html += `<p class="text-xs pl-4">→ ${result.details.fnSamples.join(', ')}</p>`;
+                    }
+                    
+                    html += `<p>False Positives: ${result.details.falsePositives} (incorrectly flagged clean files)</p>`;
+                    
+                    if (result.details.fpSamples && result.details.fpSamples.length > 0) {
+                        html += `<p class="text-xs pl-4">→ ${result.details.fpSamples.join(', ')}</p>`;
+                    }
+                    
+                    html += `
+                            <p class="mt-2">Detected: ${result.details.maliciousDetected}/${result.details.maliciousTotal} malicious samples</p>
+                        </div>
+                    `;
+                }
+                
+                html += '</div>';
+            }
+
+            html += `
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+            container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Load stats when page loads
+        // Handle Tab/Shift+Tab indentation in the YARA rule textarea
+        function handleTabKey(e) {
+            if (e.key !== 'Tab') return;
+            e.preventDefault();
+            const textarea = e.target;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const value = textarea.value;
+            const tab = '\t';
+
+            // No selection: insert or remove indent on current line
+            if (start === end) {
+                const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+                if (e.shiftKey) {
+                    // Unindent: remove a leading tab or up to 4 spaces at line start
+                    if (value.slice(lineStart, lineStart + tab.length) === tab) {
+                        textarea.value = value.slice(0, lineStart) + value.slice(lineStart + tab.length);
+                        const newPos = Math.max(lineStart, start - tab.length);
+                        textarea.selectionStart = textarea.selectionEnd = newPos;
+                    } else if (value.slice(lineStart, lineStart + 4) === '    ') {
+                        textarea.value = value.slice(0, lineStart) + value.slice(lineStart + 4);
+                        const newPos = Math.max(lineStart, start - 4);
+                        textarea.selectionStart = textarea.selectionEnd = newPos;
+                    }
+                } else {
+                    // Insert a tab
+                    textarea.value = value.slice(0, start) + tab + value.slice(end);
+                    textarea.selectionStart = textarea.selectionEnd = start + tab.length;
+                }
+
+                return;
+            }
+
+            // Selection spans multiple lines
+            const selected = value.slice(start, end);
+            const lines = selected.split('\n');
+
+            if (!e.shiftKey) {
+                // Indent each selected line
+                const indented = lines.map(l => tab + l).join('\n');
+                textarea.value = value.slice(0, start) + indented + value.slice(end);
+                textarea.selectionStart = start;
+                textarea.selectionEnd = end + tab.length * lines.length;
+            } else {
+                // Unindent each selected line (remove one leading tab or up to 4 spaces)
+                let removed = 0;
+                const unindentedLines = lines.map(l => {
+                    if (l.startsWith(tab)) {
+                        removed += tab.length;
+                        return l.slice(tab.length);
+                    } else if (l.startsWith('    ')) {
+                        removed += 4;
+                        return l.slice(4);
+                    } else if (l.startsWith('  ')) {
+                        removed += 2;
+                        return l.slice(2);
+                    }
+                    return l;
+                });
+
+                const unindented = unindentedLines.join('\n');
+                textarea.value = value.slice(0, start) + unindented + value.slice(end);
+                textarea.selectionStart = start;
+                textarea.selectionEnd = Math.max(start, end - removed);
+            }
+        }
+
+        document.getElementById('yara-rule').addEventListener('keydown', handleTabKey);
+
+        // Line numbers support
+        const textarea = document.getElementById('yara-rule');
+        const lineNumbers = document.getElementById('line-numbers');
+
+        function updateLineNumbers() {
+            const lines = textarea.value.split('\n').length || 1;
+            let numbers = '';
+            for (let i = 1; i <= lines; i++) {
+                numbers += i + '\n';
+            }
+            lineNumbers.textContent = numbers;
+        }
+
+        function syncScroll() {
+            lineNumbers.scrollTop = textarea.scrollTop;
+        }
+
+        function goToLine(line) {
+            // line is 1-indexed
+            const lines = textarea.value.split('\n');
+            const targetLine = Math.max(1, Math.min(line, lines.length));
+            let pos = 0;
+            for (let i = 0; i < targetLine - 1; i++) pos += lines[i].length + 1; // +1 for newline
+
+            // place caret at start of the target line and scroll into view
+            textarea.focus();
+            textarea.selectionStart = textarea.selectionEnd = pos;
+            const lineHeight = 20; // matches CSS
+            textarea.scrollTop = Math.max(0, (targetLine - 1) * lineHeight - 40);
+        }
+
+        // Update numbers on input and on load
+        textarea.addEventListener('input', updateLineNumbers);
+        textarea.addEventListener('scroll', syncScroll);
+        window.addEventListener('resize', updateLineNumbers);
+        updateLineNumbers();
+
+        // Wrap showResult to extract syntax error line number and jump to it
+        function extractLineNumberFromError(msg){
+            const m = msg.match(/line\s+(\d+)/i);
+            if (m) return parseInt(m[1], 10);
+            return null;
+        }
+
+        const originalShowResult=showResult;
+        showResult=function(result){
+            if (result && result.message && typeof result.message==='string'){
+                const line = extractLineNumberFromError(result.message);
+                if (line){
+                    goToLine(line);
+                }
+            }
+            originalShowResult(result);
+        }
+
+        loadStats();
+    </script>
+</body>
+</html>

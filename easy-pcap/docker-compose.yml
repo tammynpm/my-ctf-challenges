@@ -1,0 +1,14 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8888:8888" # host:container
+    environment:
+      ADMIN_USER: "IKillVibes"
+      ADMIN_PASS: "IKillVibes"
+      #volumes:
+      #- ./uploads:/app/uploads            # persist admin uploads
+      # # optional: persist the pointer if your service writes real_flag.txt
+      #- ./real_flag.txt:/app/real_flag.txt # host:container
+    restart: always
+
