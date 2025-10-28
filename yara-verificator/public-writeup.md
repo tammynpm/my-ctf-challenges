@@ -1,7 +1,7 @@
 # YARA Verificator Writeup
 
 ## Overview 
-[image](src/renamed.png)
+![](src/renamed.png)
 
 ## Idea
 
