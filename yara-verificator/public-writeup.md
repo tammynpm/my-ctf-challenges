@@ -1,8 +1,11 @@
 # YARA Verificator Writeup
 
+## Overview 
+[image](/src/renamed.png)
+
 ## Idea
 
-It stems from a type of attack
+The general idea of this code is to mimic a type of attack. 
 
 ```C
 #include <windows.h>
