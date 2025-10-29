@@ -181,6 +181,9 @@ rule http_c2_agent_sample
         all of them
 }
 ```
+## YARA
+
+
 ## winapi
 winapi is the API for Windows desktop and server applications. It is the set of functions and data strutures that your Windows applications are written with. 
 
