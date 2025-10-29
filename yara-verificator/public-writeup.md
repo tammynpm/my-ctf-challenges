@@ -166,8 +166,8 @@ rule http_c2_agent_sample
         all of them
 }
 ```
-## YARA
-YARA (Yet Another Recursive Acronym) must be one of the most flexible tools in Threat Detection. It has a really simple structure that could be picked up right away, and is highly customizable. 
+### YARA
+YARA (Yet Another Recursive Acronym) must be one of the most flexible tools in Threat Detection. It has a really simple structure, and is highly customizable. 
 
 For example: 
 
@@ -182,18 +182,15 @@ rule detection{
 ```
 Here are more examples of [YARA rules used to detect some well-known malware](https://github.com/reversinglabs/reversinglabs-yara-rules/tree/develop/yara).
 
+We need to identify behavioral rules from the given description. Let's look at the instructions of the challenge again: `the malware disguised itself as a legitimate browser by mimicking common web traffic patterns`. This suggest the sample uses `InternetOpen` or similar functions in `wininet` for web requests as one of the hints linked to WinINet documentation. 
 
+`All infected Windows machines are using the same User-Agent string: Mozilla/5.0` resembles the real User-Agent string. 
 
-## winapi
-winapi is the API for Windows desktop and server applications. It is the set of functions and data strutures that your Windows applications are written with. 
+Translate to these behaviors to YARA string matches where each string targets a key characteristic of the malware:
 
-### wininet?
-WinINet API is one of the APIs under the Networking and Internet categories in the WinAPI.
-
-Let's look at the instructions of the challenge again: `the malware disguised itself as a legitimate browser by mimicking common web traffic patterns`. This should indicate that there is some traffic happening. One of the hints linked to WinINet documentation. 
-
-Basically, `InternetOpen` establishes the Internet connection to the client application.
-
+Using `all of them` condition ensures the rule only matches samples that contain all three behaviors, reducing false positives. If we only want to detect partial matches, we could use `any of them` instead. 
+ 
+Once your rule is written, test it against the sample. If it doesn't trigger the correct files, adjust string matches until they matches. 
 
 [CreateProcess()](https://medium.com/@theCTIGuy/windows-api-highlight-createprocess-ec1ec0915b9c)
 
@@ -209,15 +206,14 @@ To detect this, I wrote a rule that check for the function name "InternetOpen".
 ## result
 ![](src/image2.png)
 
-The flag is `MINUTEMAN{w3_ju57_l0v3_y37_4n07h3r_r1d1cul0u5_rul3_0300393325}`
+The flag is ==MINUTEMAN{w3_ju57_l0v3_y37_4n07h3r_r1d1cul0u5_rul3_0300393325}==
 
-Okok I admit this is more a blue team CTF challenge. But I hope you learned something from it:) 
 
 ## Lessons Learned
 
 One team has the solve for this by using the `strings` command. 
 This is because I compiled the files in Debug mode instead of Release mode. In this mode, Visual Studio embeds the file paths. 
 
-In Visual Studio, when 
+When you do the `strings` command on one of the "malicious" file `variant-0.exe`, you can see `C:\Users\thkpd\source\repos\http-c2-agent\x64\Debug\http-c2-agent.pdb`, the PDB path (Program Database path), which contain debugging info that links compiled code back to source code. 
 
-In this case, when do the `strings` command on one of the "malicious" file `variant-0.exe`, you can see the line `C:\Users\thkpd\source\repos\http-c2-agent\x64\Debug\http-c2-agent.pdb` which is the 
+
