@@ -165,15 +165,8 @@ int main(void) {
 //startup info to define stdin, stdout, stderr
 ```
 
-## winapi
-winapi is the API for Windows desktop and server applications. It is the set of functions and data strutures that your Windows applications are written with. 
+There are two sets of data originally that got mixed into one. One set includes all clean executable and dll files from `C:\Windows\SYSTEM32`. One set contains all the "malicious-wannabe" executable files that I created out of the source code above with a bit of variations for each one just to not duplicate them. 
 
-### wininet?
-WinINet API is one of the APIs under the Networking and Internet categories in the WinAPI.
-
-Let's look at the instructions of the challenge again: `the malware disguised itself as a legitimate browser by mimicking common web traffic patterns`. This should indicate that there is some traffic happening. One of the hints linked to WinINet documentation. 
-
-Basically, `InternetOpen` establishes the Internet connection to the client application.
 
 ## solution
 The intended solve is something like this: 
@@ -187,12 +180,27 @@ rule http_c2_agent_sample
         all of them
 }
 ```
+## winapi
+winapi is the API for Windows desktop and server applications. It is the set of functions and data strutures that your Windows applications are written with. 
+
+### wininet?
+WinINet API is one of the APIs under the Networking and Internet categories in the WinAPI.
+
+Let's look at the instructions of the challenge again: `the malware disguised itself as a legitimate browser by mimicking common web traffic patterns`. This should indicate that there is some traffic happening. One of the hints linked to WinINet documentation. 
+
+Basically, `InternetOpen` establishes the Internet connection to the client application.
+
+
 [CreateProcess()](https://medium.com/@theCTIGuy/windows-api-highlight-createprocess-ec1ec0915b9c)
 
 CreateProcess() is one of the most used WinAPI functions. It ... creates a process. Many processes running in the background  
 
 [InternetOpen()](https://www.aldeid.com/wiki/InternetOpen) 
 One of the parameters to `InternetOpen` is the `User-Agent` which is a good signature to it. 
+
+Basically, how to write the detection rules for the correct samples are just to stick to what we are given and have observed so far, i.e. the descriptions. 
+
+Okok I admit this is more a blue team CTF challenge. But as a digital forensist, you need to be detective and collecting pieces of information.  
 
 To detect this, I wrote a rule that check for the function name "InternetOpen". 
 
