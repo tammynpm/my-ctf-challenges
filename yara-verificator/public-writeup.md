@@ -5,6 +5,8 @@
 
 ## Idea
 
+If you have played CTFs for a while and never encountered a challenge like this before, it is not just you. Jeremy Dunn came up with this original challenge idea. 
+
 The general idea of this code is to mimic a type of attack. 
 
 ```C
@@ -163,7 +165,8 @@ int main(void) {
 //startup info to define stdin, stdout, stderr
 ```
 
-## what is winapi? 
+## winapi
+winapi is the API for Windows desktop and server applications. It is the set of functions and data strutures that your Windows applications are written with. 
 
 ### wininet?
 WinINet API is one of the APIs under the Networking and Internet categories in the WinAPI.
@@ -172,5 +175,25 @@ Let's look at the instructions of the challenge again: `the malware disguised it
 
 Basically, `InternetOpen` establishes the Internet connection to the client application.
 
+### solution
+The intended solve is something like this: 
+```shell
+rule http_c2_agent_sample
+{
+    strings:
+        $create_process = "CreateProcess"
+        $wininet1 = "InternetOpen"
+    condition:
+        all of them
+}
+```
+[CreateProcess()](https://medium.com/@theCTIGuy/windows-api-highlight-createprocess-ec1ec0915b9c)
+
+CreateProcess() is one of the most used WinAPI functions. It ... creates a process. Many processes running in the background  
+
+[InternetOpen()](https://www.aldeid.com/wiki/InternetOpen) 
+One of the parameters to `InternetOpen` is the `User-Agent` which is a good signature to it.
 
 
+
+As long as you can give all the conditions in the rule, it should return the correct set of unusual executable files. 
