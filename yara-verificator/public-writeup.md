@@ -3,8 +3,6 @@
 ## Overview 
 ![](src/renamed.png)
 
-## Idea
-
 Digital forensics in CTFs is not just disk analyzing. There are also memory forensics, network forensics, steganography (though not practically used anymore), file analysis, etc. I want to introduce a different type of digital forensics in this CTF. This is threat detection forensics challenge. 
 
 This is the code i wrote to. 
@@ -168,7 +166,7 @@ int main(void) {
 //startup info to define stdin, stdout, stderr
 ```
 
-There are two sets of data originally that got mixed into one. One set includes all clean executable and dll files from `C:\Windows\SYSTEM32`. One set contains all the "malicious-wannabe" executable files that I created out of the source code above with a bit of variations for each one just to not duplicate them. 
+There are two sets of data originally that got mixed into one. One set includes all benign .exe (executable) and .dll (Dynamic Link Library) files from `C:\Windows\SYSTEM32`. The other set contains all the "malicious-wannabe" executable files that the source code above generated with a bit of variations for each one just to not duplicate them. 
 
 
 ## solution
@@ -203,9 +201,7 @@ One of the parameters to `InternetOpen` is the `User-Agent` which is a good sign
 
 Basically, how to write the detection rules for the correct samples are just to stick to what we are given and have observed so far, i.e. the descriptions. 
 
-Okok I admit this is more a blue team CTF challenge. But as a digital forensist, you need to be detective and collecting pieces of information.  
-
 To detect this, I wrote a rule that check for the function name "InternetOpen". 
 
-
+Okok I admit this is more a blue team CTF challenge. But as a digital forensist, you need to be detective and collecting pieces of information.  
 As long as you can give all the conditions in the rule, it should return the correct set of unusual executable files. 
