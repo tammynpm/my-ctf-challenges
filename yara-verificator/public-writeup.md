@@ -5,7 +5,7 @@
 
 ## Idea
 
-If you have played CTFs for a while and never encountered a challenge like this before, it is not just you. Jeremy Dunn came up with this original challenge idea. 
+Digital forensics in CTFs is not just disk analyzing. There are also memory forensics, network forensics, steganography (though not practically used anymore), file analysis, etc. 
 
 The general idea of this code is to mimic a type of attack. 
 
@@ -192,8 +192,9 @@ rule http_c2_agent_sample
 CreateProcess() is one of the most used WinAPI functions. It ... creates a process. Many processes running in the background  
 
 [InternetOpen()](https://www.aldeid.com/wiki/InternetOpen) 
-One of the parameters to `InternetOpen` is the `User-Agent` which is a good signature to it.
+One of the parameters to `InternetOpen` is the `User-Agent` which is a good signature to it. 
 
+To detect this, I wrote a rule that check for the function name "InternetOpen". 
 
 
 As long as you can give all the conditions in the rule, it should return the correct set of unusual executable files. 
