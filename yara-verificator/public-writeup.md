@@ -7,7 +7,8 @@
 
 Digital forensics in CTFs is not just disk analyzing. There are also memory forensics, network forensics, steganography (though not practically used anymore), file analysis, etc. I want to introduce a different type of digital forensics in this CTF. This is threat detection forensics challenge. 
 
-This is the code i wrote to 
+This is the code i wrote to
+It is not clean by any chance lol 
 ```C
 #include <windows.h>
 #include <wininet.h>
