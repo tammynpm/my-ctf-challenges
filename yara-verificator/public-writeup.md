@@ -3,13 +3,13 @@
 ![](src/description.png)
 
 ## Background
-Digital forensics in CTFs is not just disk analyzing. There are also memory forensics, network forensics, steganography (though not practically used anymore), file analysis, etc. I want to introduce a different type of digital forensics in this CTF. This is threat detection forensics challenge. I intentionally made this challenge medium and expected more solves. This writeup will look at the solution for the YARA Verificator challenge. 
+Digital forensics in CTFs is not just disk analyzing. There are also memory forensics, network forensics, steganography (though not practically used anymore), file analysis, etc. I want to introduce a different type of digital forensics in this CTF. This is threat detection forensics challenge. I intentionally made this challenge medium and expected more solves. There were 2 solves at the end. This writeup will look at the solution for the YARA Verificator challenge. 
 
 ![](src/renamed.png)
 
 The distributed source code for this challenge is as follows.  
 
-The executables generated from this code cannot do anything to your computer because it will immediately be flagged by Windows Security because it uses antivirus software (AV software) like Microsoft Defender Antivirus to scan files and look for malware signatures and suspicious behaviour.  
+> Facts: The executables generated from this code cannot do anything to your computer because it will immediately be flagged by Windows Security because it uses antivirus software (AV software) like Microsoft Defender Antivirus to scan files and look for malware signatures and suspicious behaviour.  
 
 ```C
 #include <windows.h>
@@ -167,6 +167,21 @@ rule http_c2_agent_sample
 }
 ```
 ## YARA
+YARA (Yet Another Recursive Acronym) must be one of the most flexible tools in Threat Detection field. It has a really simple structure that anyone could pick up right away, and is highly customizable. 
+
+For example: 
+
+```
+rule detection{
+	strings:
+		$pattern1="hello"
+		$pattern2="world"
+	conditions:
+		any of them
+}
+```
+Here are more examples of [YARA rules used to detect some well-known malware](https://github.com/reversinglabs/reversinglabs-yara-rules/tree/develop/yara).
+
 
 
 ## winapi
@@ -196,9 +211,8 @@ To detect this, I wrote a rule that check for the function name "InternetOpen".
 
 The flag is `MINUTEMAN{w3_ju57_l0v3_y37_4n07h3r_r1d1cul0u5_rul3_0300393325}`
 
-Okok I admit this is more a blue team CTF challenge. But as a digital forensist, you need to be detective and collecting pieces of information.  
-As long as you can give all the conditions in the rule, it should return the correct set of unusual executable files.
-
+Okok I admit this is more a blue team CTF challenge. But I hope you learned something from it:) 
 
 ## Unintended Solve
-One team has the solve for this by 
+
+One team has the solve for this by  
