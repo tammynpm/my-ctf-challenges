@@ -9,7 +9,7 @@ Digital forensics in CTFs is not just disk analyzing. There are also memory fore
 
 The distributed source code for this challenge is as follows.  
 
-> Facts: The executables generated from this code cannot do anything to your computer because it will immediately be flagged by Windows Security because it uses antivirus software (AV software) like Microsoft Defender Antivirus to scan files and look for malware signatures and suspicious behaviour.  
+> Fun Facts: The executables generated from this code cannot do anything to your computer because it will immediately be flagged by Windows Security (WS). WS uses antivirus software (AV software) like Microsoft Defender Antivirus to scan files and look for malware signatures and suspicious behaviour.  
 
 ```C
 #include <windows.h>
@@ -167,7 +167,7 @@ rule http_c2_agent_sample
 }
 ```
 ## YARA
-YARA (Yet Another Recursive Acronym) must be one of the most flexible tools in Threat Detection field. It has a really simple structure that anyone could pick up right away, and is highly customizable. 
+YARA (Yet Another Recursive Acronym) must be one of the most flexible tools in Threat Detection. It has a really simple structure that could be picked up right away, and is highly customizable. 
 
 For example: 
 
@@ -213,6 +213,11 @@ The flag is `MINUTEMAN{w3_ju57_l0v3_y37_4n07h3r_r1d1cul0u5_rul3_0300393325}`
 
 Okok I admit this is more a blue team CTF challenge. But I hope you learned something from it:) 
 
-## Unintended Solve
+## Lessons Learned
 
-One team has the solve for this by  
+One team has the solve for this by using the `strings` command. 
+This is because I compiled the files in Debug mode instead of Release mode. In this mode, Visual Studio embeds the file paths. 
+
+In Visual Studio, when 
+
+In this case, when do the `strings` command on one of the "malicious" file `variant-0.exe`, you can see the line `C:\Users\thkpd\source\repos\http-c2-agent\x64\Debug\http-c2-agent.pdb` which is the 
