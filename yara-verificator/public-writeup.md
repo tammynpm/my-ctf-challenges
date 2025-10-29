@@ -5,10 +5,9 @@
 
 ## Idea
 
-Digital forensics in CTFs is not just disk analyzing. There are also memory forensics, network forensics, steganography (though not practically used anymore), file analysis, etc. 
+Digital forensics in CTFs is not just disk analyzing. There are also memory forensics, network forensics, steganography (though not practically used anymore), file analysis, etc. I want to introduce a different type of digital forensics in this CTF. This is threat detection forensics challenge. 
 
-The general idea of this code is to mimic a type of attack. 
-
+This is the code i wrote to 
 ```C
 #include <windows.h>
 #include <wininet.h>
@@ -171,11 +170,11 @@ winapi is the API for Windows desktop and server applications. It is the set of 
 ### wininet?
 WinINet API is one of the APIs under the Networking and Internet categories in the WinAPI.
 
-Let's look at the instructions of the challenge again: `the malware disguised itself as a legitimate browser by mimicking common web traffic patterns`. This should indicate something. One of the hints linked to WinINet documentation. 
+Let's look at the instructions of the challenge again: `the malware disguised itself as a legitimate browser by mimicking common web traffic patterns`. This should indicate that there is some traffic happening. One of the hints linked to WinINet documentation. 
 
 Basically, `InternetOpen` establishes the Internet connection to the client application.
 
-### solution
+## solution
 The intended solve is something like this: 
 ```shell
 rule http_c2_agent_sample
