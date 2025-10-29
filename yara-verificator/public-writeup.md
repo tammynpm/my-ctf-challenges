@@ -9,7 +9,7 @@ Digital forensics in CTFs is not just disk analyzing. There are also memory fore
 
 This is the code i wrote to. 
 
-The executables generated from this code cannot do anything to your computer because it will immediately be flagged by Windows Security because their job is to scan files and look for malware signatures and suspicious behaviour. You need to be more clever or original to bypass it. 
+The executables generated from this code cannot do anything to your computer because it will immediately be flagged by Windows Security because it uses antivirus software (AV software) like Microsoft Defender Antivirus to scan files and look for malware signatures and suspicious behaviour.  
 
 It is not clean by any chance lol 
 ```C
