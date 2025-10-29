@@ -206,7 +206,7 @@ To detect this, I wrote a rule that check for the function name "InternetOpen".
 ## result
 ![](src/image2.png)
 
-The flag is ==MINUTEMAN{w3_ju57_l0v3_y37_4n07h3r_r1d1cul0u5_rul3_0300393325}==
+The flag is **MINUTEMAN{w3_ju57_l0v3_y37_4n07h3r_r1d1cul0u5_rul3_0300393325}**
 
 
 ## Lessons Learned
