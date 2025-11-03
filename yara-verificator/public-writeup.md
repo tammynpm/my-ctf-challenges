@@ -18,20 +18,8 @@ In this challenge, we are provided with a set of over 400 executables and dll fi
 
 There are two sets of data originally that got mixed into one. One set includes all benign .exe (executable) and .dll (Dynamic Link Library) files from `C:\Windows\SYSTEM32`. The other set contains all the "malicious-wannabe" executable files that the source code above generated with a bit of variations for each one just to not duplicate them. 
 
-## Solution
-```shell
-rule http_c2_agent_sample
-{
-    strings:
-        $user_agent = "Mozilla/5.0"
-		$create_process = "CreateProcess"
-        $wininet1 = "InternetOpen"
-    condition:
-        all of them
-}
-```
 ### YARA
-YARA (Yet Another Recursive Acronym) must be one of the most flexible tools in Threat Detection. It has a really simple structure, and is highly customizable. 
+YARA (Yet Another Recursive Acronym) might be one of the most flexible tools using for files triage. It has a really simple structure, and is highly customizable. 
 
 For example: 
 
@@ -44,10 +32,23 @@ rule detection{
 		any of them
 }
 ```
-The example above 
+Each YARA rule is made up of two main parts: `strings` list the patterns to look for inside file, and `condition`tells when to flag a file as a match. In the example above, the rule matches any file containing "hello" or "world". In this challenge, we will use the same idea but the patterns will be malware traits.  
 
 Here are more examples of [YARA rules used to detect some well-known malware](https://github.com/reversinglabs/reversinglabs-yara-rules/tree/develop/yara).
 
+
+## Solution
+```shell
+rule http_c2_agent_sample
+{
+    strings:
+        $user_agent = "Mozilla/5.0"
+		$create_process = "CreateProcess"
+        $wininet1 = "InternetOpen"
+    condition:
+        all of them
+}
+```
 In our challenge, the goal is to identify hte behavioral indicators from the given description. Let's look at the instructions of the challenge again: `the malware disguised itself as a legitimate browser by mimicking common web traffic patterns`. This suggest the sample uses functions from the WinINet API such as `InternetOpen()` for netowrk communication. If this wasn't too clear, one of the hints should give more information on the WinINet documentation. 
 
 Additionally, `All infected Windows machines are using the same User-Agent string: Mozilla/5.0` resembles the real User-Agent string and is a clear indicator that can be matched in strings. 
