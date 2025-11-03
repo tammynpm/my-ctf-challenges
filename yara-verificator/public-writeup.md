@@ -18,7 +18,7 @@ In this challenge, we are provided with a set of over 400 executables and dll fi
 
 There are two sets of data originally that got mixed into one. One set includes all benign .exe (executable) and .dll (Dynamic Link Library) files from `C:\Windows\SYSTEM32`. The other set contains all the "malicious-wannabe" executable files that the source code above generated with a bit of variations for each one just to not duplicate them. 
 
-## solution
+## Solution
 ```shell
 rule http_c2_agent_sample
 {
@@ -44,30 +44,29 @@ rule detection{
 		any of them
 }
 ```
+The example above 
+
 Here are more examples of [YARA rules used to detect some well-known malware](https://github.com/reversinglabs/reversinglabs-yara-rules/tree/develop/yara).
 
-We need to identify behavioral rules from the given description. Let's look at the instructions of the challenge again: `the malware disguised itself as a legitimate browser by mimicking common web traffic patterns`. This suggest the sample uses `InternetOpen` or similar functions in `wininet` for web requests as one of the hints linked to WinINet documentation. 
+In our challenge, the goal is to identify hte behavioral indicators from the given description. Let's look at the instructions of the challenge again: `the malware disguised itself as a legitimate browser by mimicking common web traffic patterns`. This suggest the sample uses functions from the WinINet API such as `InternetOpen()` for netowrk communication. If this wasn't too clear, one of the hints should give more information on the WinINet documentation. 
 
-`All infected Windows machines are using the same User-Agent string: Mozilla/5.0` resembles the real User-Agent string. 
+Additionally, `All infected Windows machines are using the same User-Agent string: Mozilla/5.0` resembles the real User-Agent string and is a clear indicator that can be matched in strings. 
 
-Translate these behaviors to YARA string matches where each string targets a key characteristic of the malware:
+Finally, the malware uses `CreateProcess()` to spawn new processes and execute received commands. This combination of HTTP communication and process creation is a classic sign of a command-and-control agent.
 
-Using `all of them` condition ensures the rule only matches samples that contain all three behaviors, reducing false positives. If we only want to detect partial matches, we could use `any of them` instead. 
+Together, these three indicators define the malware's behavior profile. 
+
+Using `all of them` condition ensures the rule only matches samples that contain all three behaviors, reducing false positives.  
  
 Once your rule is written, test it against the sample. If it doesn't trigger the correct files, adjust string matches until they matches. 
 
-[CreateProcess()](https://medium.com/@theCTIGuy/windows-api-highlight-createprocess-ec1ec0915b9c)
+> API Notes (for context) 
+> [CreateProcess()](https://medium.com/@theCTIGuy/windows-api-highlight-createprocess-ec1ec0915b9c)
+> CreateProcess() is one of the most used WinAPI functions. Many processes running in your computer's background have probably been created by this function. Malware samples use CreateProcess() to execute payloads or commands received from a C2 server.
+> [InternetOpen()](https://www.aldeid.com/wiki/InternetOpen) 
 
-CreateProcess() is one of the most used WinAPI functions. Many processes running in your computer's background have probably been created by this function. Malware samples use CreateProcess() to execute payloads or commands received from a C2 server.
 
-[InternetOpen()](https://www.aldeid.com/wiki/InternetOpen) 
-One of the parameters to `InternetOpen` is the `User-Agent` which is a good signature to it. 
-
-Basically, how to write the detection rules for the correct samples are just to stick to what we are given and have observed so far, i.e. the descriptions. 
-
-By combining the indicators above (the use of WinINet, the Mozilla/5.0 user-agent, and process creation behivor), the YARA rule can effectively identify all malicious samples while avoiding false positives. 
-
-## result
+## Result
 ![](src/image2.png)
 
 The flag is **MINUTEMAN{w3_ju57_l0v3_y37_4n07h3r_r1d1cul0u5_rul3_0300393325}**
