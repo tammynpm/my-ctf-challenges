@@ -3,13 +3,17 @@
 ![](src/description.png)
 
 ## Background
-Digital forensics in CTFs is not just disk analyzing. There are also memory forensics, network forensics, steganography (though not practically used anymore), file analysis, etc. I want to introduce a different type of digital forensics in this CTF. This is threat detection forensics challenge. I intentionally made this challenge medium and expected more solves. There were 2 solves at the end. This writeup will look at the solution for the YARA Verificator challenge. 
+Digital forensics in CTFs is not just disk analyzing. There are also memory forensics, network forensics, steganography (though not practically used anymore), file analysis, etc. I want to introduce a different type of digital forensics in this CTF.
+
+This is threat detection forensics challenge. In real investigations, analysts use YARA to triage large file sets for malware indicators. 
+
+I intentionally made this challenge medium and expected more solves. There were 2 solves at the end. This writeup will look at the solution for the YARA Verificator challenge. 
 
 ![](src/renamed.png)
 
-The distributed source code for this challenge is as follows.  
+The distributed [source code](src/chall.c) for this challenge.  
 
-> Fun Facts: The executables generated from this code cannot do anything to your computer because it will immediately be flagged by Windows Security (WS). WS uses antivirus software (AV software) like Microsoft Defender Antivirus to scan files and look for malware signatures and suspicious behaviour.  
+> The executables generated from this code cannot do anything to your computer because it will immediately be flagged by Windows Security (WS). WS uses antivirus software (AV software) like Microsoft Defender Antivirus to scan files and look for malware signatures and suspicious behaviour.  
 
 ## Challenge Summary
 In this challenge, we are provided with a set of over 400 executables and dll files. We are asked to write a YARA rule that could detect the malicious files that attacker had implanted. 
@@ -48,7 +52,7 @@ We need to identify behavioral rules from the given description. Let's look at t
 
 `All infected Windows machines are using the same User-Agent string: Mozilla/5.0` resembles the real User-Agent string. 
 
-Translate to these behaviors to YARA string matches where each string targets a key characteristic of the malware:
+Translate these behaviors to YARA string matches where each string targets a key characteristic of the malware:
 
 Using `all of them` condition ensures the rule only matches samples that contain all three behaviors, reducing false positives. If we only want to detect partial matches, we could use `any of them` instead. 
  
@@ -71,11 +75,13 @@ To detect this, I wrote a rule that check for the function name "InternetOpen".
 The flag is **MINUTEMAN{w3_ju57_l0v3_y37_4n07h3r_r1d1cul0u5_rul3_0300393325}**
 
 
-## Lessons Learned
+## Author's Note
 
 One team has the solve for this by using the `strings` command. 
-This is because I compiled the files in Debug mode instead of Release mode. In this mode, Visual Studio embeds the file paths. 
+I noticed that compiling in Debug mode left behind the PDB file paths, which allowed players to shortcut the intended solution using `strings`.  
 
-When you do the `strings` command on one of the "malicious" file `variant-0.exe`, you can see `C:\Users\thkpd\source\repos\http-c2-agent\x64\Debug\http-c2-agent.pdb`, the PDB path (Program Database path), which contain debugging info that links compiled code back to source code. 
+For example, when apply the `strings` command on one of the "malicious" file `variant-0.exe`, you can see `C:\Users\thkpd\source\repos\http-c2-agent\x64\Debug\http-c2-agent.pdb`, the PDB path (Program Database path), which contain debugging info that links compiled code back to source code.
+
+Future versions would use Release builds to avoid this. 
 
 
