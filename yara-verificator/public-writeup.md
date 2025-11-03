@@ -5,9 +5,7 @@
 ## Background
 Digital forensics in CTFs is not just disk analyzing. There are also memory forensics, network forensics, steganography (though not practically used anymore), file analysis, etc. I want to introduce a different type of digital forensics in this CTF.
 
-This is threat detection forensics challenge. In real investigations, analysts use YARA to triage large file sets for malware indicators. 
-
-I intentionally made this challenge medium and expected more solves. There were 2 solves at the end. This writeup will look at the solution for the YARA Verificator challenge. 
+This is threat detection forensics challenge. In real investigations, analysts use YARA to triage large file sets for malware indicators. This challenge will mirror a forensics triage process.  
 
 ![](src/renamed.png)
 
@@ -60,14 +58,14 @@ Once your rule is written, test it against the sample. If it doesn't trigger the
 
 [CreateProcess()](https://medium.com/@theCTIGuy/windows-api-highlight-createprocess-ec1ec0915b9c)
 
-CreateProcess() is one of the most used WinAPI functions. It ... creates a process. Many processes running in the background  
+CreateProcess() is one of the most used WinAPI functions. Many processes running in your computer's background have probably been created by this function. Malware samples use CreateProcess() to execute payloads or commands received from a C2 server.
 
 [InternetOpen()](https://www.aldeid.com/wiki/InternetOpen) 
 One of the parameters to `InternetOpen` is the `User-Agent` which is a good signature to it. 
 
 Basically, how to write the detection rules for the correct samples are just to stick to what we are given and have observed so far, i.e. the descriptions. 
 
-To detect this, I wrote a rule that check for the function name "InternetOpen". 
+By combining the indicators above (the use of WinINet, the Mozilla/5.0 user-agent, and process creation behivor), the YARA rule can effectively identify all malicious samples while avoiding false positives. 
 
 ## result
 ![](src/image2.png)
